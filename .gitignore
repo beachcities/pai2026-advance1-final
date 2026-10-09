@@ -1,0 +1,34 @@
+# データセット・動画・チェックポイント・学習の出力
+data/
+datasets/
+*.parquet
+*.mp4
+*.mkv
+*.avi
+*.mov
+checkpoints/
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+outputs/
+wandb/
+
+# 秘密
+.env
+.env.*
+*.token
+*token*.txt
+.netrc
+.huggingface/
+.cache/
+
+# Python・Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# レポートの出力（PDF は提出時に手元で作る）
+docs/report/*.pdf
