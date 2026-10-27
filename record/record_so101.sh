@@ -20,7 +20,7 @@ FOLLOWER_PORT="${FOLLOWER_PORT:-/dev/ttyACM1}"   # 白フォロワー（7 月の
 LEADER_PORT="${LEADER_PORT:-/dev/ttyACM0}"       # 黒リーダー（7 月の記録）
 ROBOT_ID="${ROBOT_ID:-white}"                     # キャリブレーションのファイル名 white.json に合わせる
 TELEOP_ID="${TELEOP_ID:-black}"                   # 同 black.json
-CAMERA="${CAMERA:-0}"                             # /dev/video0（C920）。/dev/v4l/by-id/… のパスでも可
+CAMERA="${CAMERA:-/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920-video-index0}"  # C920。/dev/video0 は内蔵カメラ（BisonCam）なので使わない
 
 # lerobot の venv
 if [ -n "${LEROBOT_VENV:-}" ]; then source "$LEROBOT_VENV/bin/activate"

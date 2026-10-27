@@ -26,7 +26,7 @@ lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
   --robot.id=white \
-  --robot.cameras="{front: {type: opencv, index_or_path: 0, width: 640, height: 480, fps: 30}}" \
+  --robot.cameras="{front: {type: opencv, index_or_path: /dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920-video-index0, width: 640, height: 480, fps: 30}}" \
   --teleop.type=so101_leader \
   --teleop.port=/dev/ttyACM0 \
   --teleop.id=black \
@@ -138,7 +138,7 @@ lerobot-record \
   --robot.type=so101_follower \
   --robot.port=/dev/ttyACM1 \
   --robot.id=white \
-  --robot.cameras="{front: {type: opencv, index_or_path: 0, width: 640, height: 480, fps: 30}}" \
+  --robot.cameras="{front: {type: opencv, index_or_path: /dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920-video-index0, width: 640, height: 480, fps: 30}}" \
   --dataset.repo_id=${HF_USER}/eval_so101-pickplace-v1_act \
   --dataset.single_task="Pick up the yellow earplug and put it into the blue tape core." \
   --dataset.num_episodes=10 \
