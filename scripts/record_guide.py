@@ -9,6 +9,7 @@
 """
 import argparse
 import datetime
+import os
 import re
 import subprocess
 import sys
@@ -31,7 +32,7 @@ def banner(lines: list[str]) -> None:
 
 
 def chime(sound: str) -> None:
-    if Path(sound).exists():
+    if os.environ.get("RECORD_SOUNDS") == "1" and Path(sound).exists():
         subprocess.Popen(["paplay", sound], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
