@@ -9,7 +9,7 @@
 - 動画：https://youtu.be/9_KTuG4R2Bg（等速、1 分 47 秒）
 
 ## 残り（Windows で行う）
-1. `docs/report/report.md` の 1 章に omnicampus のアカウント名を書く
+1. ~~1 章に omnicampus のアカウント名を書く~~（済：Beachcities）
 2. 見直す：人や部屋の写った画像、氏名・所属・メールアドレス、W&B のリンクが入っていないこと
 3. PDF にする（手順は `docs/report/README.md`）。ファイル名は `説明資料_PAI最終課題_<omnicampusアカウント名>.pdf`
 4. omnicampus で提出する

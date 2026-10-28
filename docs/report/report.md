@@ -7,7 +7,7 @@ title: "Physical AI 応用編1（2026）最終課題：SO-101 による耳栓の
 
 # 1. タイトル・アカウント
 - タイトル：SO-101 による耳栓のピック＆プレース（ACT）
-- omnicampus アカウント名：（空欄。提出のときに書く）
+- omnicampus アカウント名：Beachcities
 
 # 2. 課題の概要
 - 何を：SO-101 の実機で「録画 → 学習 → 実機推論」を一周させる。
@@ -144,4 +144,3 @@ title: "Physical AI 応用編1（2026）最終課題：SO-101 による耳栓の
 # 10. リンク
 - GitHub：https://github.com/beachcities/pai2026-advance1-final
 - YouTube（動画）：https://youtu.be/9_KTuG4R2Bg（等速、1 分 47 秒）
-- （W&B のリンクは載せない）
