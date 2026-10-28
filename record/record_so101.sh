@@ -21,6 +21,7 @@ LEADER_PORT="${LEADER_PORT:-/dev/ttyACM0}"       # 黒リーダー（7 月の記
 ROBOT_ID="${ROBOT_ID:-white}"                     # キャリブレーションのファイル名 white.json に合わせる
 TELEOP_ID="${TELEOP_ID:-black}"                   # 同 black.json
 CAMERA="${CAMERA:-/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920-video-index0}"  # C920。/dev/video0 は内蔵カメラ（BisonCam）なので使わない
+ROTATION="${ROTATION:-0}"                         # カメラを逆さに付けたなら 180（0 / 90 / 180 / -90）
 
 # lerobot の venv
 if [ -n "${LEROBOT_VENV:-}" ]; then source "$LEROBOT_VENV/bin/activate"
@@ -56,7 +57,9 @@ if [ "$MODE" = resume ]; then
   EXTRA+=(--resume=true)
 elif [ -e "$DIR" ]; then
   if [ "$MODE" = trial ]; then
-    BAK="$DIR.bak-$(date +%Y%m%d_%H%M%S)"; mv "$DIR" "$BAK"; echo "前の試し録りを ${BAK#$LR/} に退けました"
+    BAK="$DIR.bak-$(date +%Y%m%d_%H%M%S)"
+    if [ "${DRY_RUN:-0}" = 1 ]; then echo "（表示だけ）前の試し録りを ${BAK#$LR/} に退けます"
+    else mv "$DIR" "$BAK"; echo "前の試し録りを ${BAK#$LR/} に退けました"; fi
   else
     echo "$REPO_ID は既に手元にあります。続きを録るなら: bash record/record_so101.sh resume"; exit 1
   fi
@@ -72,11 +75,14 @@ PY2
 )
 [ -n "$HAS_NO_STAMP" ] || { lerobot-record --help 2>/dev/null | grep -q 'no_stamp' && HAS_NO_STAMP=True; }
 [ "$HAS_NO_STAMP" = True ] && EXTRA+=(--dataset.no_stamp=true)
+# カメラの自動調整を固定した値に戻す（scripts/camera_lock.sh lock で保存した値。無ければ自動のまま）
+if [ -f "$(dirname "$0")/../outputs/camera_c920.env" ]; then CAMERA="$CAMERA" bash "$(dirname "$0")/../scripts/camera_lock.sh" apply
+else echo "注意: outputs/camera_c920.env が無いので、カメラは自動調整のまま録ります（bash scripts/camera_lock.sh lock）"; fi
 SHOW=true; python -c 'import rerun' 2>/dev/null || { SHOW=false; echo "rerun が無いので --display_data=false にします"; }
 
 CMD=(lerobot-record
   --robot.type=so101_follower --robot.port="$FOLLOWER_PORT" --robot.id="$ROBOT_ID"
-  --robot.cameras="{front: {type: opencv, index_or_path: $CAMERA, width: 640, height: 480, fps: $FPS}}"
+  --robot.cameras="{front: {type: opencv, index_or_path: $CAMERA, width: 640, height: 480, fps: $FPS, rotation: $ROTATION}}"
   --teleop.type=so101_leader --teleop.port="$LEADER_PORT" --teleop.id="$TELEOP_ID"
   --dataset.repo_id="$REPO_ID" --dataset.single_task="$TASK"
   --dataset.num_episodes="$N" --dataset.episode_time_s="$EPISODE_TIME_S" --dataset.reset_time_s="$RESET_TIME_S"
