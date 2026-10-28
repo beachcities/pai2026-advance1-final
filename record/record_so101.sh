@@ -4,7 +4,7 @@
 #   bash record/record_so101.sh main     本番：50 本。最後に Hub へ private で上げる
 #   bash record/record_so101.sh resume   本番の続き：残りの本数を meta/info.json から計算して足す
 # 実行する lerobot-record のコマンドを全文表示してから始めます。
-# 値は環境変数で変えられます（既定値は下）。キー（→ 次へ / ← 録り直し / Esc）は Wayland では効かないので、時間で進む。
+# 値は環境変数で変えられます（既定値は下）。キーは灰色の窓（X11）を選んで Enter 次へ / Backspace 録り直し / Esc やめる（record/lerobot_record_keys.py）。
 # 1 本ごとに「場所 N の M 回目 どうぞ」を表示する（scripts/record_guide.py。場所は 1→PLACES と回す）。
 set -euo pipefail
 MODE="${1:-}"
@@ -83,7 +83,7 @@ else echo "注意: outputs/camera_c920.env が無いので、カメラは自動�
 SHOW="${DISPLAY_DATA:-true}"   # rerun の窓を出さないなら DISPLAY_DATA=false
 if [ "$SHOW" = true ] && ! python -c 'import rerun' 2>/dev/null; then SHOW=false; echo "rerun が無いので --display_data=false にします"; fi
 
-CMD=(lerobot-record
+CMD=(python "$(cd "$(dirname "$0")" && pwd)/lerobot_record_keys.py"   # lerobot-record と同じ。Enter で次へ
   --robot.type=so101_follower --robot.port="$FOLLOWER_PORT" --robot.id="$ROBOT_ID"
   --robot.cameras="{front: {type: opencv, index_or_path: $CAMERA, width: 640, height: 480, fps: $FPS, rotation: $ROTATION}}"
   --teleop.type=so101_leader --teleop.port="$LEADER_PORT" --teleop.id="$TELEOP_ID"
@@ -96,6 +96,14 @@ printf '%q ' "${CMD[@]}"; echo
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 NEXT=0; [ "$MODE" = resume ] && NEXT="$DONE"
 echo "最初は 場所 $(( NEXT % PLACES + 1 )) に耳栓を置き、腕を開始姿勢にしてから待ってください。止めるときは Claude に「止めて」と言う"
+# キーは X11 の窓を選んでいるときだけ届く（Wayland の窓では届かない）。灰色の窓を開いて、そこを選んでもらう
+KEYWIN=""
+if command -v ffplay >/dev/null && [ -n "${DISPLAY:-}" ]; then
+  SDL_VIDEODRIVER=x11 ffplay -loglevel quiet -window_title "ここをクリック  Enter=次へ  Backspace=録り直し  Esc=やめる" \
+    -x 900 -y 200 -f lavfi -i color=c=gray:s=900x200 >/dev/null 2>&1 &
+  KEYWIN=$!; trap '[ -n "$KEYWIN" ] && kill "$KEYWIN" 2>/dev/null' EXIT
+  echo "灰色の窓をクリックしてから、Enter で次へ・Backspace で録り直し・Esc でやめる"
+fi
 PYTHONUNBUFFERED=1 "${CMD[@]}" 2>&1 | python3 "$HERE/scripts/record_guide.py" --places "$PLACES" \
   --total "$([ "$MODE" = trial ] && echo "$N" || echo "$TARGET")" --episode-s "$EPISODE_TIME_S" --reset-s "$RESET_TIME_S" --log "$HERE/outputs/places_${REPO_ID##*/}.csv"
 echo "終了 $(date -u +%Y-%m-%dT%H:%M:%SZ)"
