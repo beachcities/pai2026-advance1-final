@@ -9,10 +9,11 @@
 - 動画：https://youtu.be/9_KTuG4R2Bg（等速、1 分 47 秒）
 
 ## 残り（Windows で行う）
-1. ~~1 章に omnicampus のアカウント名を書く~~（済：Beachcities）
-2. 見直す：人や部屋の写った画像、氏名・所属・メールアドレス、W&B のリンクが入っていないこと
-3. PDF にする（手順は `docs/report/README.md`）。ファイル名は `説明資料_PAI最終課題_<omnicampusアカウント名>.pdf`
-4. omnicampus で提出する
+1. 次のリンクを開き、右上の ⬇ で PDF をダウンロードする
+   https://github.com/beachcities/pai2026-advance1-final/blob/main/docs/report/説明資料_PAI最終課題_Beachcities.pdf
+2. omnicampus の提出ページで、その PDF を提出する
+
+（アカウント名の記入・見直し・PDF 作成は Ubuntu で済み。個人情報の検査も 0 件）
 
 ## メモ
 - 録画のログ・場所の CSV・動画のファイルは Ubuntu の PC の `outputs/` にあり、git には入れていない
