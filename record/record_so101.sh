@@ -3,12 +3,13 @@
 #   bash record/record_so101.sh trial    試し録り：2 本・30 秒。Hub には上げない（名前 …-v1-trial）
 #   bash record/record_so101.sh main     本番：50 本。最後に Hub へ private で上げる
 #   bash record/record_so101.sh resume   本番の続き：残りの本数を meta/info.json から計算して足す
+#   bash record/record_so101.sh eval     推論：学習した方策が白いアームを動かす（既定 15 本＝場所ごとに 3 本。Hub には上げない）
 # 実行する lerobot-record のコマンドを全文表示してから始めます。
 # 値は環境変数で変えられます（既定値は下）。キーはこのターミナルで Enter 次へ / Backspace 録り直し / Esc やめる（record/lerobot_record_keys.py）。
 # 1 本ごとに「場所 N の M 回目 どうぞ」を表示する（scripts/record_guide.py。場所は 1→PLACES と回す）。
 set -euo pipefail
 MODE="${1:-}"
-case "$MODE" in trial|main|resume) ;; *) sed -n '2,8p' "$0"; exit 2;; esac
+case "$MODE" in trial|main|resume|eval) ;; *) sed -n '2,9p' "$0"; exit 2;; esac
 
 HF_USER="${HF_USER:-beachcities}"
 NAME="${DATASET_NAME:-so101-pickplace-v2}"   # v1 は白アームの台が外れる前の 3 本（使わない）
@@ -50,6 +51,16 @@ done
 
 REPO_ID="$HF_USER/$NAME"; EXTRA=(); N="$TARGET"
 [ "$MODE" = trial ] && { REPO_ID="$REPO_ID-trial"; N="${NUM_EPISODES:-2}"; EXTRA+=(--dataset.push_to_hub=false); }
+if [ "$MODE" = eval ]; then
+  # lerobot は方策を使うときデータセット名が eval_ で始まることを求める
+  POLICY_PATH="${POLICY_PATH:-$(cd "$(dirname "$0")/.." && pwd)/outputs/train/act_so101_pickplace_v2/checkpoints/last/pretrained_model}"
+  [ -f "$POLICY_PATH/model.safetensors" ] || { echo "方策がありません: $POLICY_PATH"; exit 1; }
+  REPO_ID="$HF_USER/eval_${NAME}_act"; N="${NUM_EPISODES:-15}"; TARGET="$N"
+  export PER_PLACE="${PER_PLACE:-3}"; export EVAL=1
+  # 方策が大きく跳んだ指令を出したときだけ抑える（1 回の指令で動ける角度の上限）。
+  # 録画では指令と実際の位置の差が手首の曲げで上位 1% 38 度あったので、普通の動きを妨げない 40 度にする
+  EXTRA+=(--policy.path="$POLICY_PATH" --dataset.push_to_hub=false --robot.max_relative_target="${MAX_RELATIVE_TARGET:-40}")
+fi
 DIR="$LR/$REPO_ID"
 if [ "$MODE" = resume ]; then
   [ -f "$DIR/meta/info.json" ] || { echo "続きを録るデータセットがありません: $REPO_ID"; exit 1; }
@@ -59,10 +70,10 @@ if [ "$MODE" = resume ]; then
   echo "既に $DONE 本。残り $N 本を足します"
   EXTRA+=(--resume=true)
 elif [ -e "$DIR" ]; then
-  if [ "$MODE" = trial ]; then
+  if [ "$MODE" = trial ] || [ "$MODE" = eval ]; then
     BAK="$DIR.bak-$(date +%Y%m%d_%H%M%S)"
-    if [ "${DRY_RUN:-0}" = 1 ]; then echo "（表示だけ）前の試し録りを ${BAK#$LR/} に退けます"
-    else mv "$DIR" "$BAK"; echo "前の試し録りを ${BAK#$LR/} に退けました"; fi
+    if [ "${DRY_RUN:-0}" = 1 ]; then echo "（表示だけ）前の分を ${BAK#$LR/} に退けます"
+    else mv "$DIR" "$BAK"; echo "前の分を ${BAK#$LR/} に退けました"; fi
   else
     echo "$REPO_ID は既に手元にあります。続きを録るなら: bash record/record_so101.sh resume"; exit 1
   fi

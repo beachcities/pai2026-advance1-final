@@ -14,6 +14,7 @@
 | `python scripts/inspect_dataset.py beachcities/so101-pickplace-v1-trial --expect-episodes 2` | 試し録りの検査（本数・フレーム数・タスク文字列・動画が最後まで開けるか） |
 | `bash record/record_so101.sh main` | 本番：50 本。最後に Hub へ private で上げる |
 | `bash record/record_so101.sh resume` | 本番の続き。残りの本数を `meta/info.json` から計算して足す |
+| `bash record/record_so101.sh eval` | 推論：学習した方策（既定 `outputs/train/act_so101_pickplace_v2/checkpoints/last/pretrained_model`、`POLICY_PATH` で変更）が白いアームを動かす。既定 15 本（場所ごとに 3 本）。置き直しの間は黒いアームで白いアームを開始姿勢に戻せる。`--robot.max_relative_target=40`。Hub には上げない |
 
 - 既定値：フォロワー（白）`/dev/ttyACM1`、リーダー（黒）`/dev/ttyACM0`、id `white`・`black`、カメラ C920（`/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920-video-index0`、640×480、30 fps。`/dev/video0` は内蔵カメラ）、エピソード 30 秒・リセット 30 秒。
 - 録画の前に `bash scripts/camera_lock.sh lock` でカメラのピント・露出・ホワイトバランスを固定しておくと、録画のたびに同じ値を設定し直します。

@@ -115,7 +115,8 @@ def record_loop(*args, **kwargs):
         # 最初の 1 本の前に「準備」の区間を入れる（腕は付いてくるが保存しない）。Enter で 1 本目の録画が始まる
         _waited[0] = True
         n = getattr(dataset, "num_episodes", 0) + 1
-        banner(f"□ 準備できました。いま Enter を押すと {n} 回目（場所 {place_of(n)}）の録画が始まります",
+        what = "方策が動き出します" if kwargs.get("policy") is not None else "録画が始まります"
+        banner(f"□ 準備できました。いま Enter を押すと {n} 回目（場所 {place_of(n)}）の{what}",
                "（Enter・Backspace・Esc は、このターミナルを選んだまま押す。日本語入力はオフ）")
         prep = {k: v for k, v in kwargs.items()
                 if k not in ("dataset", "policy", "preprocessor", "postprocessor", "display_compressed_images")}
@@ -132,11 +133,19 @@ def record_loop(*args, **kwargs):
     if dataset is not None:
         n = getattr(dataset, "num_episodes", _count[0]) + 1  # 保存済みの本数 + 1（録り直しでも数がずれない）
         _count[0] = n
-        banner(f"▶ 録画中（{n} 回目・場所 {place_of(n)}）", "つまむ → テープの中心へ入れる → 腕を開始姿勢に戻す → Enter")
+        if kwargs.get("policy") is not None:
+            banner(f"▶ 方策が動かしています（{n} 回目・場所 {place_of(n)}）",
+                   "見守る。終わった・止まった・危ないときは Enter（危ないときは Esc でやめる）。黒いアームは開始姿勢のまま触らない")
+        else:
+            banner(f"▶ 録画中（{n} 回目・場所 {place_of(n)}）", "つまむ → テープの中心へ入れる → 腕を開始姿勢に戻す → Enter")
     else:
         nxt = _count[0] + 1
-        banner(f"■ 置き直し（保存されません）  次は {nxt} 回目・場所 {place_of(nxt)}",
-               f"耳栓をテープから取り出して 場所 {place_of(nxt)} に置く → Enter → 次の録画が始まる")
+        if os.environ.get("EVAL") == "1":
+            banner(f"■ 置き直し  次は {nxt} 回目・場所 {place_of(nxt)}（いまの回の成功・失敗を覚えておく）",
+                   f"黒いアームで白いアームを開始姿勢へ → 耳栓を 場所 {place_of(nxt)} に置く → Enter → 方策が動き出す")
+        else:
+            banner(f"■ 置き直し（保存されません）  次は {nxt} 回目・場所 {place_of(nxt)}",
+                   f"耳栓をテープから取り出して 場所 {place_of(nxt)} に置く → Enter → 次の録画が始まる")
     _record_loop(*args, **kwargs)
     if dataset is not None and events is not None and dataset.episode_buffer is not None \
             and dataset.episode_buffer["size"] == 0 and not events["stop_recording"]:
