@@ -1,5 +1,7 @@
 # Physical AI 応用編1（2026）最終課題
 
+> **提出用 PDF：[説明資料_PAI最終課題_Beachcities.pdf](docs/report/説明資料_PAI最終課題_Beachcities.pdf)**（開いて右上の ⬇ でダウンロード）／進捗：[docs/PROGRESS.md](docs/PROGRESS.md)
+
 SO-101 の実機で「録画 → 学習 → 実機推論」を一周させる課題のリポジトリです。
 
 - タスク：蛍光イエローの耳栓をつまみ、青いテープの芯の中へ入れる（データセット名 `so101-pickplace`）
