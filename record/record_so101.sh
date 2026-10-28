@@ -11,7 +11,7 @@ MODE="${1:-}"
 case "$MODE" in trial|main|resume) ;; *) sed -n '2,8p' "$0"; exit 2;; esac
 
 HF_USER="${HF_USER:-beachcities}"
-NAME="${DATASET_NAME:-so101-pickplace-v1}"
+NAME="${DATASET_NAME:-so101-pickplace-v2}"   # v1 は白アームの台が外れる前の 3 本（使わない）
 TASK="${TASK:-Pick up the yellow earplug and put it into the blue tape core.}"
 TARGET="${NUM_EPISODES:-50}"
 EPISODE_TIME_S="${EPISODE_TIME_S:-30}"

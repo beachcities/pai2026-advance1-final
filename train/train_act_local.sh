@@ -11,7 +11,7 @@ case "$MODE" in start|resume|status|stop) ;; *) sed -n '2,7p' "$0"; exit 2;; esa
 cd "$(dirname "$0")/.."
 
 HF_USER="${HF_USER:-beachcities}"
-DATASET="${DATASET:-$HF_USER/so101-pickplace-v1}"
+DATASET="${DATASET:-$HF_USER/so101-pickplace-v2}"
 RUN="${RUN:-act_so101_pickplace_v1}"
 POLICY_REPO="${POLICY_REPO:-$HF_USER/$RUN}"
 STEPS="${STEPS:-100000}"; BATCH="${BATCH:-8}"; SAVE_FREQ="${SAVE_FREQ:-5000}"
