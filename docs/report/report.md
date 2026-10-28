@@ -143,5 +143,5 @@ title: "Physical AI 応用編1（2026）最終課題：SO-101 による耳栓の
 
 # 10. リンク
 - GitHub：https://github.com/beachcities/pai2026-advance1-final
-- YouTube（動画）：（記入。等速、1 分 47 秒）
+- YouTube（動画）：https://youtu.be/9_KTuG4R2Bg（等速、1 分 47 秒）
 - （W&B のリンクは載せない）
