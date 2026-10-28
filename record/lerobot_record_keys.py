@@ -114,7 +114,9 @@ def record_loop(*args, **kwargs):
     if dataset is not None and events is not None and not _waited[0]:
         # 最初の 1 本の前に「準備」の区間を入れる（腕は付いてくるが保存しない）。Enter で 1 本目の録画が始まる
         _waited[0] = True
-        banner("□ 準備中（保存されません）", "耳栓を置き、腕を開始姿勢にしたら Enter → 1 回目の録画が始まる")
+        n = getattr(dataset, "num_episodes", 0) + 1
+        banner(f"□ 準備できました。いま Enter を押すと {n} 回目（場所 {place_of(n)}）の録画が始まります",
+               "（Enter・Backspace・Esc は、このターミナルを選んだまま押す。日本語入力はオフ）")
         prep = {k: v for k, v in kwargs.items()
                 if k not in ("dataset", "policy", "preprocessor", "postprocessor", "display_compressed_images")}
         prep["control_time_s"] = 3600
