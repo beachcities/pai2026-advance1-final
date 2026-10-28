@@ -96,7 +96,7 @@ printf '%q ' "${CMD[@]}"; echo
 [ "${DRY_RUN:-0}" = 1 ] && exit 0
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 NEXT=0; [ "$MODE" = resume ] && NEXT="$DONE"
-echo "最初は 場所 $(( NEXT % PLACES + 1 )) に耳栓を置き、腕を開始姿勢にしてから待ってください。止めるときは Claude に「止めて」と言う"
+echo "最初は 場所 $(( NEXT / PER_PLACE + 1 > PLACES ? PLACES : NEXT / PER_PLACE + 1 )) に耳栓を置き（$(( NEXT + 1 )) 回目）、腕を開始姿勢にしてから待ってください。止めるときは Claude に「止めて」と言う"
 # キーは X11 の窓を選んでいるときだけ届く（Wayland の窓では届かない）。灰色の窓を開いて、そこを選んでもらう
 KEYWIN=""
 if command -v ffplay >/dev/null && [ -n "${DISPLAY:-}" ]; then
