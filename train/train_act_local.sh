@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 
 HF_USER="${HF_USER:-beachcities}"
 DATASET="${DATASET:-$HF_USER/so101-pickplace-v2}"
-RUN="${RUN:-act_so101_pickplace_v1}"
+RUN="${RUN:-act_so101_pickplace_v2}"   # データセット v2 に合わせる
 POLICY_REPO="${POLICY_REPO:-$HF_USER/$RUN}"
 STEPS="${STEPS:-100000}"; BATCH="${BATCH:-8}"; SAVE_FREQ="${SAVE_FREQ:-5000}"
 OUT="outputs/train/$RUN"; LOGDIR="outputs/logs"; PIDFILE="$LOGDIR/$RUN.pid"
