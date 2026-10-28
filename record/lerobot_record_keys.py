@@ -6,7 +6,8 @@ lerobot 0.4.4 のキーは → 次へ / ← 録り直し / Esc 終了だけ。�
   Backspace または ←       : その 1 本を録り直す
   Esc                      : 録画をやめる（それまでの分は保存）
 に置き換える。キーは X11 の窓（record_so101.sh が開く灰色の窓）を選んでいるときに届く。
-- 押しっぱなしのくり返しと、1.5 秒以内の 2 回目は無視する（2 回分届くと、始まったばかりの次の 1 本が 0 秒で終わるため）。
+- 押しっぱなしのくり返しと、1.5 秒以内の 2 回目は無視する。録画・置き直しが始まる前に押された Enter も捨てる
+  （持ち越すと、始まったばかりの区間が 0 秒で終わり、動かすタイミングがずれるため）。
 - それでも 1 本が 0 フレームで終わったら、エラーで止めずに「録り直し」にする。
 """
 import logging
@@ -59,8 +60,11 @@ _record_loop = rec.record_loop
 
 
 def record_loop(*args, **kwargs):
-    _record_loop(*args, **kwargs)
     dataset, events = kwargs.get("dataset"), kwargs.get("events")
+    # 始まる前（前の 1 本の保存中など）に押された Enter は捨てる。持ち越すと、この区間が 0 秒で終わる
+    if events is not None:
+        events["exit_early"] = False
+    _record_loop(*args, **kwargs)
     if dataset is not None and events is not None and dataset.episode_buffer is not None \
             and dataset.episode_buffer["size"] == 0 and not events["stop_recording"]:
         print("この 1 本は 0 フレームで終わったので、録り直しにします", flush=True)

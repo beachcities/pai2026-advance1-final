@@ -89,7 +89,7 @@ CMD=(python "$(cd "$(dirname "$0")" && pwd)/lerobot_record_keys.py"   # lerobot-
   --teleop.type=so101_leader --teleop.port="$LEADER_PORT" --teleop.id="$TELEOP_ID"
   --dataset.repo_id="$REPO_ID" --dataset.single_task="$TASK"
   --dataset.num_episodes="$N" --dataset.episode_time_s="$EPISODE_TIME_S" --dataset.reset_time_s="$RESET_TIME_S"
-  --dataset.fps="$FPS" --dataset.private=true --display_data="$SHOW" --play_sounds=false "${EXTRA[@]}")
+  --dataset.fps="$FPS" --dataset.private=true --display_data="$SHOW" --play_sounds=false --dataset.streaming_encoding=true --dataset.encoder_threads=2 "${EXTRA[@]}")
 echo "lerobot $LEROBOT_VERSION / 開始 $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 printf '%q ' "${CMD[@]}"; echo
 [ "${DRY_RUN:-0}" = 1 ] && exit 0
