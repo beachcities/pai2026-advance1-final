@@ -14,7 +14,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-SOUND = "/usr/share/sounds/freedesktop/stereo/complete.oga"
+SOUND_START = "/usr/share/sounds/freedesktop/stereo/complete.oga"  # 録画の始まり
+SOUND_RESET = "/usr/share/sounds/freedesktop/stereo/bell.oga"      # 置き直しの始まり
 
 
 def place_of(k: int, places: int) -> tuple[int, int]:
@@ -29,9 +30,9 @@ def banner(lines: list[str]) -> None:
     print(f"{bar}\n", flush=True)
 
 
-def chime() -> None:
-    if Path(SOUND).exists():
-        subprocess.Popen(["paplay", SOUND], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def chime(sound: str) -> None:
+    if Path(sound).exists():
+        subprocess.Popen(["paplay", sound], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def main() -> None:
@@ -59,14 +60,14 @@ def main() -> None:
             total = f"（通し {current + 1}" + (f" / {args.total}）" if args.total else "）")
             banner([f"▶ 録画中 {args.episode_s} 秒：場所 {place} の {rnd} 回目 どうぞ {total}",
                     "  つまむ → テープの中心へ入れる → 開始姿勢に戻って待つ"])
-            chime()
+            chime(SOUND_START)
             with log.open("a") as f:
                 f.write(f"{current},{place},{rnd},{datetime.datetime.now().isoformat(timespec='seconds')}\n")
         elif "Reset the environment" in line and current is not None:
             place, rnd = place_of(current + 1, args.places)
             banner([f"■ 置き直し {args.reset_s} 秒（この間は保存されません）",
                     f"  次は 場所 {place} の {rnd} 回目：耳栓を 場所 {place} に置き、腕を開始姿勢へ"])
-            chime()
+            chime(SOUND_RESET)
         elif "Stop recording" in line:
             banner(["● 録画を終えました（保存中。ターミナルが戻るまで待ってください）"])
 
