@@ -5,53 +5,82 @@ lerobot 0.4.4 のキーは → 次へ / ← 録り直し / Esc 終了だけ。�
   Enter または →           : 次へ（録画中ならその 1 本を終える。置き直し中なら置き直しを終える）
   Backspace または ←       : その 1 本を録り直す
   Esc                      : 録画をやめる（それまでの分は保存）
-に置き換える。キーは X11 の窓（record_so101.sh が開く灰色の窓）を選んでいるときに届く。
+に置き換える。キーは、このコマンドを実行したターミナルから読む（lerobot の pynput は Wayland では届かず、
+X11 の窓を使う方法は、窓の選択が外れると届かなくなったため）。
 - 2 秒以内の 2 回目（押しっぱなしのくり返しを含む）は無視する。録画・置き直しが始まる前に押された Enter も捨てる
   （持ち越すと、始まったばかりの区間が 0 秒で終わり、動かすタイミングがずれるため）。
 - 最初の 1 本の前は「準備」の区間にして、Enter を押すまで録画を始めない。
 - それでも 1 本が 0 フレームで終わったら、エラーで止めずに「録り直し」にする。
 """
+import atexit
 import logging
 import os
+import select
+import sys
+import termios
+import threading
 import time
+import tty
 
 import lerobot.scripts.lerobot_record as rec
-from lerobot.utils.control_utils import is_headless
+
+
+class _StdinKeys:
+    """コマンドを実行したターミナル（標準入力）から 1 文字ずつ読む。画面の方式（Wayland/X11）や窓の選択に左右されない"""
+
+    def __init__(self, on_key):
+        self.on_key, self.fd, self.alive = on_key, sys.stdin.fileno(), True
+        self.saved = termios.tcgetattr(self.fd)
+        tty.setcbreak(self.fd)  # Enter を待たずに 1 文字ずつ読む（Ctrl+C は効いたまま）
+        atexit.register(self.stop)
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def _run(self):
+        while self.alive:
+            if not select.select([self.fd], [], [], 0.2)[0]:
+                continue
+            c = os.read(self.fd, 1)
+            if c == b"\x1b":  # Esc、または矢印キー（ESC [ C / ESC [ D）
+                rest = os.read(self.fd, 2) if select.select([self.fd], [], [], 0.05)[0] else b""
+                c = {b"[C": b"\n", b"[D": b"\x7f"}.get(rest, b"\x1b")
+            self.on_key(c)
+
+    def stop(self):
+        if self.alive:
+            self.alive = False
+            termios.tcsetattr(self.fd, termios.TCSADRAIN, self.saved)
 
 
 def init_keyboard_listener():
     events = {"exit_early": False, "rerecord_episode": False, "stop_recording": False}
-    if is_headless():
-        logging.warning("Headless environment detected. Keyboard inputs will not be available.")
+    if not sys.stdin.isatty():
+        logging.warning("標準入力がターミナルではないので、キー操作は使えません")
         return None, events
-    from pynput import keyboard
 
     last = [0.0]
     keylog = open(os.environ.get("KEY_LOG", os.devnull), "a", buffering=1)
 
-    def on_press(key):
-        # 「離した」の知らせは IME などで落ちることがあるので使わない。2 秒以内の 2 回目（くり返し含む）だけ捨てる
+    def on_key(c: bytes):
+        # 2 秒以内の 2 回目（押しっぱなしのくり返し含む）は捨てる
         now = time.monotonic()
         accepted = now - last[0] >= 2.0
-        keylog.write(f"{time.strftime('%H:%M:%S')} {key} {'accepted' if accepted else 'ignored'}\n")
-        if not accepted:
+        keylog.write(f"{time.strftime('%H:%M:%S')} {c!r} {'accepted' if accepted else 'ignored'}\n")
+        if not accepted or c not in (b"\n", b"\r", b"\x7f", b"\x08", b"\x1b"):
             return
         last[0] = now
-        if key in (keyboard.Key.enter, keyboard.Key.right):
+        if c in (b"\n", b"\r"):
             print("Enter: 次へ", flush=True)
             events["exit_early"] = True
-        elif key in (keyboard.Key.backspace, keyboard.Key.left):
+        elif c in (b"\x7f", b"\x08"):
             print("Backspace: 録り直し", flush=True)
             events["rerecord_episode"] = True
             events["exit_early"] = True
-        elif key == keyboard.Key.esc:
+        else:
             print("Esc: 録画をやめます", flush=True)
             events["stop_recording"] = True
             events["exit_early"] = True
 
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
-    return listener, events
+    return _StdinKeys(on_key), events
 
 
 _record_loop = rec.record_loop

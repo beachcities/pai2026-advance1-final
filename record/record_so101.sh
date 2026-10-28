@@ -4,7 +4,7 @@
 #   bash record/record_so101.sh main     本番：50 本。最後に Hub へ private で上げる
 #   bash record/record_so101.sh resume   本番の続き：残りの本数を meta/info.json から計算して足す
 # 実行する lerobot-record のコマンドを全文表示してから始めます。
-# 値は環境変数で変えられます（既定値は下）。キーは灰色の窓（X11）を選んで Enter 次へ / Backspace 録り直し / Esc やめる（record/lerobot_record_keys.py）。
+# 値は環境変数で変えられます（既定値は下）。キーはこのターミナルで Enter 次へ / Backspace 録り直し / Esc やめる（record/lerobot_record_keys.py）。
 # 1 本ごとに「場所 N の M 回目 どうぞ」を表示する（scripts/record_guide.py。場所は 1→PLACES と回す）。
 set -euo pipefail
 MODE="${1:-}"
@@ -97,14 +97,7 @@ printf '%q ' "${CMD[@]}"; echo
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 NEXT=0; [ "$MODE" = resume ] && NEXT="$DONE"
 echo "最初は 場所 $(( NEXT / PER_PLACE + 1 > PLACES ? PLACES : NEXT / PER_PLACE + 1 )) に耳栓を置き（$(( NEXT + 1 )) 回目）、腕を開始姿勢にしてから待ってください。止めるときは Claude に「止めて」と言う"
-# キーは X11 の窓を選んでいるときだけ届く（Wayland の窓では届かない）。灰色の窓を開いて、そこを選んでもらう
-KEYWIN=""
-if command -v ffplay >/dev/null && [ -n "${DISPLAY:-}" ]; then
-  SDL_VIDEODRIVER=x11 ffplay -loglevel quiet -window_title "ここをクリック  Enter=次へ  Backspace=録り直し  Esc=やめる" \
-    -x 900 -y 200 -f lavfi -i color=c=gray:s=900x200 >/dev/null 2>&1 &
-  KEYWIN=$!; trap '[ -n "$KEYWIN" ] && kill "$KEYWIN" 2>/dev/null' EXIT
-  echo "灰色の窓をクリックしてから、Enter で次へ・Backspace で録り直し・Esc でやめる"
-fi
+echo "キーは、このターミナルを選んだまま押す：Enter で次へ・Backspace で録り直し・Esc でやめる"
 STAMP=$(date +%Y%m%d_%H%M%S); export KEY_LOG="$HERE/outputs/keys_$STAMP.log"   # 押されたキーと区間の始まり（原因調べ用）
 PYTHONUNBUFFERED=1 "${CMD[@]}" 2>&1 | tee "$HERE/outputs/record_$STAMP.log" | python3 "$HERE/scripts/record_guide.py" --places "$PLACES" \
   --total "$([ "$MODE" = trial ] && echo "$N" || echo "$TARGET")" --episode-s "$EPISODE_TIME_S" --reset-s "$RESET_TIME_S" --log "$HERE/outputs/places_${REPO_ID##*/}.csv"
