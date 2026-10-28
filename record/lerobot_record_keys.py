@@ -6,7 +6,7 @@ lerobot 0.4.4 のキーは → 次へ / ← 録り直し / Esc 終了だけ。�
   Backspace または ←       : その 1 本を録り直す
   Esc                      : 録画をやめる（それまでの分は保存）
 に置き換える。キーは X11 の窓（record_so101.sh が開く灰色の窓）を選んでいるときに届く。
-- 押しっぱなしのくり返しと、1.5 秒以内の 2 回目は無視する。録画・置き直しが始まる前に押された Enter も捨てる
+- 2 秒以内の 2 回目（押しっぱなしのくり返しを含む）は無視する。録画・置き直しが始まる前に押された Enter も捨てる
   （持ち越すと、始まったばかりの区間が 0 秒で終わり、動かすタイミングがずれるため）。
 - 最初の 1 本の前は「準備」の区間にして、Enter を押すまで録画を始めない。
 - それでも 1 本が 0 フレームで終わったら、エラーで止めずに「録り直し」にする。
@@ -26,19 +26,15 @@ def init_keyboard_listener():
         return None, events
     from pynput import keyboard
 
-    held = set()
     last = [0.0]
-
-    def on_release(key):
-        held.discard(key)
+    keylog = open(os.environ.get("KEY_LOG", os.devnull), "a", buffering=1)
 
     def on_press(key):
-        if key in held:  # 押しっぱなしのくり返し
-            return
-        held.add(key)
+        # 「離した」の知らせは IME などで落ちることがあるので使わない。2 秒以内の 2 回目（くり返し含む）だけ捨てる
         now = time.monotonic()
-        if now - last[0] < 1.5:
-            print("（続けて押されたので無視しました）", flush=True)
+        accepted = now - last[0] >= 2.0
+        keylog.write(f"{time.strftime('%H:%M:%S')} {key} {'accepted' if accepted else 'ignored'}\n")
+        if not accepted:
             return
         last[0] = now
         if key in (keyboard.Key.enter, keyboard.Key.right):
@@ -53,7 +49,7 @@ def init_keyboard_listener():
             events["stop_recording"] = True
             events["exit_early"] = True
 
-    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+    listener = keyboard.Listener(on_press=on_press)
     listener.start()
     return listener, events
 
@@ -74,6 +70,11 @@ def place_of(n: int) -> int:
     return min((n - 1) // PER_PLACE + 1, PLACES)
 
 
+def _log_phase(name: str) -> None:
+    with open(os.environ.get("KEY_LOG", os.devnull), "a") as f:
+        f.write(f"{time.strftime('%H:%M:%S')} --- {name} start\n")
+
+
 def banner(title: str, body: str) -> None:
     bar = "=" * 60
     print(f"\n{bar}\n  {title}\n    {body}\n{bar}\n", flush=True)
@@ -88,6 +89,7 @@ def record_loop(*args, **kwargs):
         prep = {k: v for k, v in kwargs.items()
                 if k not in ("dataset", "policy", "preprocessor", "postprocessor", "display_compressed_images")}
         prep["control_time_s"] = 3600
+        _log_phase("prep")
         events["exit_early"] = False
         _record_loop(**prep)
         if events["stop_recording"]:
@@ -95,6 +97,7 @@ def record_loop(*args, **kwargs):
     # 始まる前（前の 1 本の保存中など）に押された Enter は捨てる。持ち越すと、この区間が 0 秒で終わる
     if events is not None:
         events["exit_early"] = False
+    _log_phase("record" if dataset is not None else "reset")
     if dataset is not None:
         n = getattr(dataset, "num_episodes", _count[0]) + 1  # 保存済みの本数 + 1（録り直しでも数がずれない）
         _count[0] = n

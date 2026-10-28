@@ -105,6 +105,7 @@ if command -v ffplay >/dev/null && [ -n "${DISPLAY:-}" ]; then
   KEYWIN=$!; trap '[ -n "$KEYWIN" ] && kill "$KEYWIN" 2>/dev/null' EXIT
   echo "灰色の窓をクリックしてから、Enter で次へ・Backspace で録り直し・Esc でやめる"
 fi
-PYTHONUNBUFFERED=1 "${CMD[@]}" 2>&1 | python3 "$HERE/scripts/record_guide.py" --places "$PLACES" \
+STAMP=$(date +%Y%m%d_%H%M%S); export KEY_LOG="$HERE/outputs/keys_$STAMP.log"   # 押されたキーと区間の始まり（原因調べ用）
+PYTHONUNBUFFERED=1 "${CMD[@]}" 2>&1 | tee "$HERE/outputs/record_$STAMP.log" | python3 "$HERE/scripts/record_guide.py" --places "$PLACES" \
   --total "$([ "$MODE" = trial ] && echo "$N" || echo "$TARGET")" --episode-s "$EPISODE_TIME_S" --reset-s "$RESET_TIME_S" --log "$HERE/outputs/places_${REPO_ID##*/}.csv"
 echo "終了 $(date -u +%Y-%m-%dT%H:%M:%SZ)"
