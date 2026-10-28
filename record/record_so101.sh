@@ -56,7 +56,10 @@ if [ "$MODE" = eval ]; then
   POLICY_PATH="${POLICY_PATH:-$(cd "$(dirname "$0")/.." && pwd)/outputs/train/act_so101_pickplace_v2/checkpoints/last/pretrained_model}"
   [ -f "$POLICY_PATH/model.safetensors" ] || { echo "方策がありません: $POLICY_PATH"; exit 1; }
   REPO_ID="$HF_USER/eval_${NAME}_act"; N="${NUM_EPISODES:-15}"; TARGET="$N"
-  export PER_PLACE="${PER_PLACE:-3}"; export EVAL=1
+  # 冒頭の PER_PLACE（録画の既定 10）を上書きする。推論は場所ごとに EVAL_PER_PLACE 本
+  export PER_PLACE="${EVAL_PER_PLACE:-3}"; export EVAL=1
+  # 時間切れで勝手に次へ進まないよう長めにする（終わったら Enter）
+  EPISODE_TIME_S="${EVAL_EPISODE_TIME_S:-60}"; RESET_TIME_S="${EVAL_RESET_TIME_S:-120}"
   # 方策が大きく跳んだ指令を出したときだけ抑える（1 回の指令で動ける角度の上限）。
   # 録画では指令と実際の位置の差が手首の曲げで上位 1% 38 度あったので、普通の動きを妨げない 40 度にする
   EXTRA+=(--policy.path="$POLICY_PATH" --dataset.push_to_hub=false --robot.max_relative_target="${MAX_RELATIVE_TARGET:-40}")
@@ -111,6 +114,6 @@ FIRST_PLACE=$(( NEXT / PER_PLACE + 1 > PLACES ? PLACES : NEXT / PER_PLACE + 1 ))
 echo "■ 接続中です。まだ Enter は押さないでください（押しても無視されます）"
 echo "  この間に、耳栓を 場所 $FIRST_PLACE に置き、腕を開始姿勢にしてください（$(( NEXT + 1 )) 回目）"
 STAMP=$(date +%Y%m%d_%H%M%S); export KEY_LOG="$HERE/outputs/keys_$STAMP.log"   # 押されたキーと区間の始まり（原因調べ用）
-PYTHONUNBUFFERED=1 "${CMD[@]}" 2>&1 | tee "$HERE/outputs/record_$STAMP.log" | python3 "$HERE/scripts/record_guide.py" --places "$PLACES" \
+PYTHONUNBUFFERED=1 "${CMD[@]}" 2>&1 | tee "$HERE/outputs/record_$STAMP.log" | python3 "$HERE/scripts/record_guide.py" --places "$PLACES" --per-place "$PER_PLACE" \
   --total "$([ "$MODE" = trial ] && echo "$N" || echo "$TARGET")" --episode-s "$EPISODE_TIME_S" --reset-s "$RESET_TIME_S" --log "$HERE/outputs/places_${REPO_ID##*/}.csv"
 echo "終了 $(date -u +%Y-%m-%dT%H:%M:%SZ)"

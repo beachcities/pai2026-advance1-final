@@ -40,6 +40,7 @@ def chime(sound: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--places", type=int, default=5)
+    ap.add_argument("--per-place", type=int, default=10)
     ap.add_argument("--total", type=int, default=0, help="目標の本数（表示用）")
     ap.add_argument("--episode-s", default="30")
     ap.add_argument("--reset-s", default="30")
@@ -58,7 +59,7 @@ def main() -> None:
         m = rec.search(line)
         if m:
             current = int(m.group(1))
-            place, rnd = place_of(current, args.places)
+            place, rnd = place_of(current, args.places, args.per_place)
             total = f"（通し {current + 1}" + (f" / {args.total}）" if args.total else "）")
             chime(SOUND_START)
             with log.open("a") as f:
