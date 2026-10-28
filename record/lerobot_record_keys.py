@@ -12,6 +12,7 @@ lerobot 0.4.4 のキーは → 次へ / ← 録り直し / Esc 終了だけ。�
 - それでも 1 本が 0 フレームで終わったら、エラーで止めずに「録り直し」にする。
 """
 import logging
+import os
 import time
 
 import lerobot.scripts.lerobot_record as rec
@@ -64,6 +65,15 @@ _waited = [False]
 _count = [0]
 
 
+PLACES = int(os.environ.get("PLACES", "5"))
+PER_PLACE = int(os.environ.get("PER_PLACE", "10"))
+
+
+def place_of(n: int) -> int:
+    """n 回目（1 始まり、データセット全体の通し）を置く場所。場所 1 を PER_PLACE 回 → 場所 2 … の順"""
+    return min((n - 1) // PER_PLACE + 1, PLACES)
+
+
 def banner(title: str, body: str) -> None:
     bar = "=" * 60
     print(f"\n{bar}\n  {title}\n    {body}\n{bar}\n", flush=True)
@@ -87,9 +97,12 @@ def record_loop(*args, **kwargs):
         events["exit_early"] = False
     if dataset is not None:
         n = getattr(dataset, "num_episodes", _count[0]) + 1  # 保存済みの本数 + 1（録り直しでも数がずれない）
-        banner(f"▶ 録画中（{n} 回目）", "つまむ → テープの中心へ入れる → 腕を開始姿勢に戻す → Enter")
+        _count[0] = n
+        banner(f"▶ 録画中（{n} 回目・場所 {place_of(n)}）", "つまむ → テープの中心へ入れる → 腕を開始姿勢に戻す → Enter")
     else:
-        banner("■ 置き直し（保存されません）", "耳栓をテープから取り出して置き直す → Enter → 次の録画が始まる")
+        nxt = _count[0] + 1
+        banner(f"■ 置き直し（保存されません）  次は {nxt} 回目・場所 {place_of(nxt)}",
+               f"耳栓をテープから取り出して 場所 {place_of(nxt)} に置く → Enter → 次の録画が始まる")
     _record_loop(*args, **kwargs)
     if dataset is not None and events is not None and dataset.episode_buffer is not None \
             and dataset.episode_buffer["size"] == 0 and not events["stop_recording"]:
