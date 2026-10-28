@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lerobot-record の出力を読み、エピソードごとに「場所 N の M 回目 どうぞ」を大きく表示する。
+"""lerobot-record の出力を読み、何本目がどの場所だったかを CSV に残す（画面の枠は lerobot_record_keys.py が出す）。
 
 使い方: lerobot-record ... 2>&1 | python3 scripts/record_guide.py --places 5 --log outputs/record_places.csv
 - lerobot の出力はそのまま流す。"Recording episode K"（K は 0 始まりの通し番号）と
@@ -60,15 +60,10 @@ def main() -> None:
             current = int(m.group(1))
             place, rnd = place_of(current, args.places)
             total = f"（通し {current + 1}" + (f" / {args.total}）" if args.total else "）")
-            banner([f"▶ 録画中 {args.episode_s} 秒：場所 {place} の {rnd} 回目 どうぞ {total}",
-                    "  つまむ → テープの中心へ入れる → 開始姿勢に戻って待つ"])
             chime(SOUND_START)
             with log.open("a") as f:
                 f.write(f"{current},{place},{rnd},{datetime.datetime.now().isoformat(timespec='seconds')}\n")
         elif "Reset the environment" in line and current is not None:
-            place, rnd = place_of(current + 1, args.places)
-            banner([f"■ 置き直し {args.reset_s} 秒（この間は保存されません）",
-                    f"  次は 場所 {place} の {rnd} 回目：耳栓を 場所 {place} に置き、腕を開始姿勢へ"])
             chime(SOUND_RESET)
         elif "Stop recording" in line:
             banner(["● 録画を終えました（保存中。ターミナルが戻るまで待ってください）"])

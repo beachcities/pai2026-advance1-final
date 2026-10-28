@@ -61,6 +61,12 @@ _record_loop = rec.record_loop
 
 
 _waited = [False]
+_count = [0]
+
+
+def banner(title: str, body: str) -> None:
+    bar = "=" * 60
+    print(f"\n{bar}\n  {title}\n    {body}\n{bar}\n", flush=True)
 
 
 def record_loop(*args, **kwargs):
@@ -68,7 +74,7 @@ def record_loop(*args, **kwargs):
     if dataset is not None and events is not None and not _waited[0]:
         # 最初の 1 本の前に「準備」の区間を入れる（腕は付いてくるが保存しない）。Enter で 1 本目の録画が始まる
         _waited[0] = True
-        print("準備中：Enter を押すと 1 本目の録画が始まります", flush=True)
+        banner("□ 準備中（保存されません）", "耳栓を置き、腕を開始姿勢にしたら Enter → 1 回目の録画が始まる")
         prep = {k: v for k, v in kwargs.items()
                 if k not in ("dataset", "policy", "preprocessor", "postprocessor", "display_compressed_images")}
         prep["control_time_s"] = 3600
@@ -76,10 +82,14 @@ def record_loop(*args, **kwargs):
         _record_loop(**prep)
         if events["stop_recording"]:
             return
-        print("録画を始めます", flush=True)
     # 始まる前（前の 1 本の保存中など）に押された Enter は捨てる。持ち越すと、この区間が 0 秒で終わる
     if events is not None:
         events["exit_early"] = False
+    if dataset is not None:
+        n = getattr(dataset, "num_episodes", _count[0]) + 1  # 保存済みの本数 + 1（録り直しでも数がずれない）
+        banner(f"▶ 録画中（{n} 回目）", "つまむ → テープの中心へ入れる → 腕を開始姿勢に戻す → Enter")
+    else:
+        banner("■ 置き直し（保存されません）", "耳栓をテープから取り出して置き直す → Enter → 次の録画が始まる")
     _record_loop(*args, **kwargs)
     if dataset is not None and events is not None and dataset.episode_buffer is not None \
             and dataset.episode_buffer["size"] == 0 and not events["stop_recording"]:
