@@ -4,7 +4,8 @@
 #   bash record/record_so101.sh main     本番：50 本。最後に Hub へ private で上げる
 #   bash record/record_so101.sh resume   本番の続き：残りの本数を meta/info.json から計算して足す
 # 実行する lerobot-record のコマンドを全文表示してから始めます。
-# 値は環境変数で変えられます（既定値は下）。キー: → 次へ / ← 録り直し / Esc 止める（それまでの分は保存）。
+# 値は環境変数で変えられます（既定値は下）。キー（→ 次へ / ← 録り直し / Esc）は Wayland では効かないので、時間で進む。
+# 1 本ごとに「場所 N の M 回目 どうぞ」を表示する（scripts/record_guide.py。場所は 1→PLACES と回す）。
 set -euo pipefail
 MODE="${1:-}"
 case "$MODE" in trial|main|resume) ;; *) sed -n '2,8p' "$0"; exit 2;; esac
@@ -14,8 +15,9 @@ NAME="${DATASET_NAME:-so101-pickplace-v1}"
 TASK="${TASK:-Pick up the yellow earplug and put it into the blue tape core.}"
 TARGET="${NUM_EPISODES:-50}"
 EPISODE_TIME_S="${EPISODE_TIME_S:-30}"
-RESET_TIME_S="${RESET_TIME_S:-15}"
+RESET_TIME_S="${RESET_TIME_S:-30}"
 FPS="${FPS:-30}"
+PLACES="${PLACES:-5}"                             # 耳栓を置く場所の数（紙の印）
 FOLLOWER_PORT="${FOLLOWER_PORT:-/dev/ttyACM1}"   # 白フォロワー（7 月の記録）
 LEADER_PORT="${LEADER_PORT:-/dev/ttyACM0}"       # 黒リーダー（7 月の記録）
 ROBOT_ID="${ROBOT_ID:-white}"                     # キャリブレーションのファイル名 white.json に合わせる
@@ -78,7 +80,8 @@ PY2
 # カメラの自動調整を固定した値に戻す（scripts/camera_lock.sh lock で保存した値。無ければ自動のまま）
 if [ -f "$(dirname "$0")/../outputs/camera_c920.env" ]; then CAMERA="$CAMERA" bash "$(dirname "$0")/../scripts/camera_lock.sh" apply
 else echo "注意: outputs/camera_c920.env が無いので、カメラは自動調整のまま録ります（bash scripts/camera_lock.sh lock）"; fi
-SHOW=true; python -c 'import rerun' 2>/dev/null || { SHOW=false; echo "rerun が無いので --display_data=false にします"; }
+SHOW="${DISPLAY_DATA:-true}"   # rerun の窓を出さないなら DISPLAY_DATA=false
+if [ "$SHOW" = true ] && ! python -c 'import rerun' 2>/dev/null; then SHOW=false; echo "rerun が無いので --display_data=false にします"; fi
 
 CMD=(lerobot-record
   --robot.type=so101_follower --robot.port="$FOLLOWER_PORT" --robot.id="$ROBOT_ID"
@@ -86,9 +89,13 @@ CMD=(lerobot-record
   --teleop.type=so101_leader --teleop.port="$LEADER_PORT" --teleop.id="$TELEOP_ID"
   --dataset.repo_id="$REPO_ID" --dataset.single_task="$TASK"
   --dataset.num_episodes="$N" --dataset.episode_time_s="$EPISODE_TIME_S" --dataset.reset_time_s="$RESET_TIME_S"
-  --dataset.fps="$FPS" --dataset.private=true --display_data="$SHOW" "${EXTRA[@]}")
+  --dataset.fps="$FPS" --dataset.private=true --display_data="$SHOW" --play_sounds=false "${EXTRA[@]}")
 echo "lerobot $LEROBOT_VERSION / 開始 $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 printf '%q ' "${CMD[@]}"; echo
 [ "${DRY_RUN:-0}" = 1 ] && exit 0
-"${CMD[@]}"
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+NEXT=0; [ "$MODE" = resume ] && NEXT="$DONE"
+echo "最初は 場所 $(( NEXT % PLACES + 1 )) に耳栓を置き、腕を開始姿勢にしてから待ってください。止めるときは Claude に「止めて」と言う"
+PYTHONUNBUFFERED=1 "${CMD[@]}" 2>&1 | python3 "$HERE/scripts/record_guide.py" --places "$PLACES" \
+  --total "$([ "$MODE" = trial ] && echo "$N" || echo "$TARGET")" --episode-s "$EPISODE_TIME_S" --reset-s "$RESET_TIME_S" --log "$HERE/outputs/places_${REPO_ID##*/}.csv"
 echo "終了 $(date -u +%Y-%m-%dT%H:%M:%SZ)"
