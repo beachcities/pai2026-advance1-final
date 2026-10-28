@@ -4,7 +4,7 @@
 使い方: lerobot-record ... 2>&1 | python3 scripts/record_guide.py --places 5 --log outputs/record_places.csv
 - lerobot の出力はそのまま流す。"Recording episode K"（K は 0 始まりの通し番号）と
   "Reset the environment" の行を見つけたら案内を出す。
-- 場所は 1→2→…→places→1 と回す（途中で止めても場所ごとの本数が偏らない）。
+- 場所は 1 を 10 回 → 2 を 10 回 → … の順。
 - 何本目がどの場所だったかを CSV に追記する（失敗した回を後で外すため）。
 """
 import argparse
@@ -19,8 +19,9 @@ SOUND_START = "/usr/share/sounds/freedesktop/stereo/complete.oga"  # 録画の�
 SOUND_RESET = "/usr/share/sounds/freedesktop/stereo/bell.oga"      # 置き直しの始まり
 
 
-def place_of(k: int, places: int) -> tuple[int, int]:
-    return k % places + 1, k // places + 1
+def place_of(k: int, places: int, per_place: int = 10) -> tuple[int, int]:
+    # 場所 1 を per_place 回 → 場所 2 を per_place 回 → …
+    return min(k // per_place + 1, places), k % per_place + 1
 
 
 def banner(lines: list[str]) -> None:
